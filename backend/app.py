@@ -177,15 +177,15 @@ def submit_answer():
     
     prompt = f"""The candidate just answered question {question_count - 1}.
 
-Look at their ACTUAL answer above. Do NOT assume or make up what they said.
+            Look at their ACTUAL answer above. Do NOT assume or make up what they said.
 
-Now ask question {question_count} of 5:
-1. Briefly acknowledge what they ACTUALLY said (1 sentence) - quote their exact words if needed
-2. Ask your next question that builds on their REAL response (1-2 sentences)
-3. If they said "I don't know" or gave a wrong answer, acknowledge that and ask something simpler
-4. Keep the TOTAL response under 3 sentences
+            Now ask question {question_count} of 5:
+            1. Briefly acknowledge what they ACTUALLY said (1 sentence) - quote their exact words if needed
+            2. Ask your next question that builds on their REAL response (1-2 sentences)
+            3. If they said "I don't know" or gave a wrong answer, acknowledge that and ask something simpler
+            4. Keep the TOTAL response under 3 sentences
 
-Be conversational but CONCISE. Only reference what they truly said."""
+            Be conversational but CONCISE. Only reference what they truly said."""
     
     response = agent.invoke({"messages": [{"role": "user", "content": prompt}]}, config=config)
     
