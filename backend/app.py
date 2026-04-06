@@ -10,7 +10,8 @@ import base64
 import requests
 import tempfile
 import json
-
+import PyPDF2
+from langchain_core.messages import HumanMessage
 load_dotenv()
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -42,8 +43,10 @@ agent = ""
 question_count = 0
 current_subject = ""
 thread_id = "interview_session"
+resume_context = ""
 
 INTERVIEW_PROMPT = """You are Natalie, a friendly and conversational interviewer conducting a natural {subject} interview.
+{context}
 
 IMPORTANT GUIDELINES:
 1. Ask exactly 5 questions total throughout the interview
@@ -101,9 +104,40 @@ def stream_audio(text):
 
 
 
+@app.route("/upload-resume", methods=["POST"])
+def upload_resume():
+    global resume_context
+    if 'resume' not in request.files:
+        return jsonify({"success": False, "error": "No file part"}), 400
+    
+    file = request.files['resume']
+    if file.filename == '':
+        return jsonify({"success": False, "error": "No selected file"}), 400
+        
+    if file and file.filename.endswith('.pdf'):
+        try:
+            pdf_reader = PyPDF2.PdfReader(file)
+            text = ""
+            for page in pdf_reader.pages:
+                text += page.extract_text() + "\n"
+                
+            extraction_prompt = "Extract the 'Projects' section from this resume text. Provide a concise summary of the candidate's projects to be used as context for an interview. If there are no projects, summarize their experience instead.\n\nResume Text:\n" + text
+            
+            response = model.invoke([HumanMessage(content=extraction_prompt)])
+            
+            resume_context = response.content
+            print(f"\n[Resume Context Extracted]\n{resume_context}\n")
+            
+            return jsonify({"success": True, "message": "Resume processed successfully"})
+            
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+            
+    return jsonify({"success": False, "error": "Invalid file type. Only PDF allowed."}), 400
+
 @app.route("/start-interview", methods=["POST"])
 def start_interview():
-    global question_count, current_subject, checkpointer, agent
+    global question_count, current_subject, checkpointer, agent, resume_context
     data = request.json
     current_subject = data.get("subject", "Python")
     question_count = 1
@@ -114,7 +148,8 @@ def start_interview():
         checkpointer=checkpointer
     )
     config = {"configurable": {"thread_id": thread_id}}
-    formatted_prompt = INTERVIEW_PROMPT.format(subject=current_subject)
+    context_text = f"Here is the candidate's background/projects context from their resume:\n{resume_context}\nBase your questions heavily on this background." if current_subject == "Resume Evaluation" else ""
+    formatted_prompt = INTERVIEW_PROMPT.format(subject=current_subject, context=context_text)
     response = agent.invoke({
         "messages": [
             {"role": "system", "content": formatted_prompt},
@@ -134,7 +169,7 @@ def speech_to_text(audio_path):
     )
   transcript = transcriber.transcribe(audio_path, config=config)
   return transcript.text if transcript.text else ""
-
+ 
 
 
 @app.route("/submit-answer", methods=["POST"])
@@ -216,7 +251,17 @@ def get_feedback():
     cleaned = text.strip()
     if "```" in cleaned:
         cleaned = cleaned.split("```")[1].replace("json", "").strip()
-    feedback = json.loads(cleaned)
+    try:
+        feedback = json.loads(cleaned)
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON: {cleaned}. Error: {e}")
+        # fallback if AI returns non-json
+        feedback = {
+            "subject": current_subject,
+            "candidate_score": 3,
+            "feedback": cleaned,
+            "areas_of_improvement": "Could not format feedback nicely. See above."
+        }
 
     return jsonify({"success": True, "feedback": feedback})
 
