@@ -34,6 +34,12 @@ const feedbackText = document.getElementById("feedbackText");
 const improvementText = document.getElementById("improvementText");
 const newInterviewBtn = document.getElementById("newInterviewBtn");
 
+const resumeUploadInput = document.getElementById("resumeUploadInput");
+const uploadResumeBtn = document.getElementById("uploadResumeBtn");
+const uploadResumeText = document.getElementById("uploadResumeText");
+const uploadResumeIcon = document.getElementById("uploadResumeIcon");
+const resumeEvaluationBtn = document.getElementById("resumeEvaluationBtn");
+
 // Subject Icons Map
 const iconMap = {
     "Self Introduction": "fas fa-user text-blue-400",
@@ -41,7 +47,8 @@ const iconMap = {
     "Python": "fab fa-python text-yellow-400",
     "English": "fas fa-language text-green-400",
     "HTML": "fab fa-html5 text-orange-400",
-    "CSS": "fab fa-css3-alt text-blue-400"
+    "CSS": "fab fa-css3-alt text-blue-400",
+    "Resume Evaluation": "fas fa-file-alt text-pink-400"
 };
 
 
@@ -287,6 +294,7 @@ function stopRecording() {
         recordingStatus.textContent = "Recording complete";
         submitBtn.classList.remove("hidden");
         submitBtn.disabled = false;
+        endInterviewBtn.disabled = false;
     }
 }
 
@@ -453,3 +461,44 @@ submitBtn.addEventListener("click", submitAnswer);
 endInterviewBtn.addEventListener("click", endInterview);
 getFeedbackBtn.addEventListener("click", getFeedback);
 newInterviewBtn.addEventListener("click", resetToWelcome);
+
+uploadResumeBtn.addEventListener("click", () => {
+    resumeUploadInput.click();
+});
+
+resumeUploadInput.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    uploadResumeText.textContent = "Uploading...";
+    uploadResumeIcon.className = "fas fa-spinner fa-spin text-gray-300";
+    
+    const formData = new FormData();
+    formData.append("resume", file);
+
+    try {
+        const response = await fetch("http://127.0.0.1:5000/upload-resume", {
+            method: "POST",
+            body: formData
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            uploadResumeText.textContent = "Resume Analyzed";
+            uploadResumeIcon.className = "fas fa-check text-green-400";
+            
+            resumeEvaluationBtn.classList.remove("hidden");
+            
+            resetToWelcome();
+            showInterviewPanel("Resume Evaluation");
+        } else {
+            uploadResumeText.textContent = "Upload Failed";
+            uploadResumeIcon.className = "fas fa-times text-red-400";
+            alert("Error: " + data.error);
+        }
+    } catch (err) {
+        uploadResumeText.textContent = "Upload Failed";
+        uploadResumeIcon.className = "fas fa-times text-red-400";
+        alert("Upload failed. Is the backend running?");
+    }
+});
