@@ -170,7 +170,6 @@ python main.py
 * Multi-language support
 * Video interview simulation
 
----
 
 ## 🤝 Contributing
 
