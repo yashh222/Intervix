@@ -1,0 +1,11 @@
+.git
+.env
+.env.*
+!.env.example
+**/__pycache__/
+**/*.py[cod]
+backend/users.sqlite3
+backend/uploads/
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo

@@ -1,0 +1,4 @@
+@import '../app/globals.css';
+
+body { min-width: 320px; }
+button, select, input { font: inherit; }

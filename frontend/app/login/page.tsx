@@ -1,0 +1,20 @@
+'use client'
+import { FormEvent, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Bot, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react'
+import { api } from '../../lib/api'
+
+export default function LoginPage() {
+  const [show, setShow] = useState(false)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const navigate = useNavigate()
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setError(''); setBusy(true)
+    const data = new FormData(event.currentTarget)
+    try { await api.login({ email: String(data.get('email')), password: String(data.get('password')) }); navigate('/app') }
+    catch (reason) { setError(reason instanceof Error ? reason.message : 'Could not log in.') }
+    finally { setBusy(false) }
+  }
+  return <main className="min-h-screen bg-black text-white"><div className="grid min-h-screen lg:grid-cols-2"><section className="flex flex-col justify-between p-6 sm:p-10 lg:p-16"><Link to="/" className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#5B6CF0] to-[#8B4FC2]"><Bot className="size-5" /></span><span className="font-bold">Intervix <span className="text-[#8B4FC2]">Ai</span></span></Link><div className="mx-auto w-full max-w-sm py-14"><Link to="/" className="mb-10 inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-white"><ArrowLeft className="size-4" /> Back to home</Link><h1 className="text-3xl font-bold">Welcome back</h1><p className="mt-2 text-sm text-zinc-500">Continue your interview practice journey.</p><form className="mt-8 space-y-5" onSubmit={submit}><label className="block"><span className="mb-2 block text-sm text-zinc-300">Email address</span><span className="relative block"><Mail className="absolute left-3 top-3 size-4 text-zinc-500" /><input name="email" required type="email" placeholder="you@example.com" className="h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] pl-10 pr-3 text-sm outline-none placeholder:text-zinc-600 focus:border-[#5B6CF0]" /></span></label><label className="block"><span className="mb-2 block text-sm text-zinc-300">Password</span><span className="relative block"><LockKeyhole className="absolute left-3 top-3 size-4 text-zinc-500" /><input name="password" required type={show?'text':'password'} className="h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] pl-10 pr-10 text-sm outline-none focus:border-[#5B6CF0]" /><button type="button" onClick={()=>setShow(!show)} className="absolute right-3 top-3 text-zinc-500">{show?<EyeOff className="size-4"/>:<Eye className="size-4"/>}</button></span></label>{error && <p role="alert" className="text-sm text-red-400">{error}</p>}<button disabled={busy} className="h-11 w-full rounded-xl bg-gradient-to-r from-[#5B6CF0] to-[#8B4FC2] text-sm font-semibold disabled:opacity-60">{busy ? 'Logging in…' : 'Log in'}</button></form><p className="mt-8 text-center text-sm text-zinc-500">Don&apos;t have an account? <Link to="/signup" className="font-medium text-[#9B8AFB]">Sign up free</Link></p></div><p className="text-xs text-zinc-700">© 2026 Intervix Ai. Your practice, your progress.</p></section><section className="relative hidden overflow-hidden bg-gradient-to-br from-[#11143a] via-[#140b24] to-black lg:flex lg:items-center lg:justify-center"><div className="absolute left-1/2 top-1/2 size-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#5B6CF0]/20 blur-[100px]"/><div className="relative max-w-md px-12"><img src="/natalie.png" alt="Natalie, AI interviewer" className="mb-8 size-20 rounded-full object-cover" /><blockquote className="text-3xl font-semibold leading-tight">“The best way to predict your interview performance is to practice with intention.”</blockquote><div className="mt-8"><p className="font-semibold">Natalie</p><p className="mt-1 text-sm text-zinc-500">Your AI interview coach</p></div></div></section></div></main>
+}
